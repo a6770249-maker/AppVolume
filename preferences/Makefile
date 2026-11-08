@@ -6,6 +6,6 @@ AppVolumePrefs_FILES = AVRootListController.m AVSliderCell.m ../AppVolumeManager
 AppVolumePrefs_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -I..
 AppVolumePrefs_FRAMEWORKS = UIKit Foundation CoreGraphics
 AppVolumePrefs_PRIVATE_FRAMEWORKS = Preferences
-AppVolumePrefs_INSTALL_PATH = $(THEOS_PACKAGE_INSTALL_PREFIX)/Library/PreferenceBundles
+AppVolumePrefs_INSTALL_PATH = /Library/PreferenceBundles
 
 include $(THEOS_MAKE_PATH)/bundle.mk
