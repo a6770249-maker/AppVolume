@@ -9,7 +9,41 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-macos:
+    runs-on: macos-13
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: brew install ldid make
+
+      - name: Set up Theos
+        run: |
+          export THEOS="$HOME/theos"
+          echo "THEOS=$THEOS" >> "$GITHUB_ENV"
+          echo "$THEOS/bin" >> "$GITHUB_PATH"
+          git clone --depth=1 --recursive https://github.com/theos/theos.git "$THEOS"
+          mkdir -p "$THEOS/sdks"
+          SDK_PATH="$(xcrun --sdk iphoneos --show-sdk-path)"
+          SDK_VER="$(/usr/libexec/PlistBuddy -c 'Print :Version' "$SDK_PATH/SDKSettings.plist")"
+          ln -s "$SDK_PATH" "$THEOS/sdks/iPhoneOS${SDK_VER}.sdk"
+          xcrun clang --version
+
+      - name: Build package
+        run: |
+          gmake clean || true
+          gmake -j"$(sysctl -n hw.ncpu)" package FINALPACKAGE=1
+
+      - name: Upload deb (macos)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppVolume-deb
+          path: packages/*.deb
+          if-no-files-found: error
+
+  build-linux-experimental:
     runs-on: ubuntu-24.04
 
     steps:
@@ -59,6 +93,6 @@ jobs:
       - name: Upload deb
         uses: actions/upload-artifact@v4
         with:
-          name: AppVolume-deb
+          name: AppVolume-deb-linux-experimental
           path: packages/*.deb
           if-no-files-found: error

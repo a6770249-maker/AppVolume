@@ -8,11 +8,6 @@
 		<array>
 			<string>com.apple.UIKit</string>
 		</array>
-		<key>Exclude</key>
-		<array>
-			<string>com.apple.springboard</string>
-			<string>com.apple.Preferences</string>
-		</array>
 	</dict>
 </dict>
 </plist>

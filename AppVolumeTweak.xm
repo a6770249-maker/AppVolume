@@ -66,13 +66,8 @@ static void AVPreferencesDidChange(CFNotificationCenterRef center, void *observe
     });
 }
 
-%ctor {
-    [[AppVolumeManager sharedManager] reload];
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL,
-                                    AVPreferencesDidChange,
-                                    (__bridge CFStringRef)AppVolumeChangedDarwinNotification,
-                                    NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
-}
+// SpringBoard / 设置 App 不注入 hook，避免系统进程异常。
+%group AppHooks
 
 %hook AVPlayer
 
@@ -127,4 +122,23 @@ static void AVPreferencesDidChange(CFNotificationCenterRef center, void *observe
         value = (AudioQueueParameterValue)AVScaledVolume((float)value);
     }
     return %orig;
+}
+
+%end
+
+%ctor {
+    NSString *bundleID = NSBundle.mainBundle.bundleIdentifier;
+    if (bundleID.length == 0 ||
+        [bundleID isEqualToString:@"com.apple.springboard"] ||
+        [bundleID isEqualToString:@"com.apple.Preferences"]) {
+        return;
+    }
+
+    %init(AppHooks);
+
+    [[AppVolumeManager sharedManager] reload];
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL,
+                                    AVPreferencesDidChange,
+                                    (__bridge CFStringRef)AppVolumeChangedDarwinNotification,
+                                    NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
 }
