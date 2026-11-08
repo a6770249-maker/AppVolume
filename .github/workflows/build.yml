@@ -10,26 +10,30 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-13
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install toolchain
-        run: brew install make ldid
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bash curl sudo xz-utils unzip
 
       - name: Install Theos
+        env:
+          SHELL: /bin/bash
         run: |
-          git clone --recursive --depth=1 https://github.com/theos/theos.git "$HOME/theos"
-          git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks"
-          echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
-          echo "$HOME/theos/bin" >> "$GITHUB_PATH"
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
 
       - name: Build package
+        env:
+          THEOS: /home/runner/theos
         run: |
-          gmake clean || true
-          gmake -j"$(sysctl -n hw.ncpu)" package FINALPACKAGE=1
+          export PATH="$THEOS/bin:$PATH"
+          make clean || true
+          make -j"$(nproc)" package FINALPACKAGE=1
 
       - name: Upload deb
         uses: actions/upload-artifact@v4
