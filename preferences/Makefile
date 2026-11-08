@@ -1,3 +1,5 @@
+include $(THEOS)/makefiles/common.mk
+
 BUNDLE_NAME = AppVolumePrefs
 
 AppVolumePrefs_FILES = AVRootListController.m AVSliderCell.m ../AppVolumeManager.m
