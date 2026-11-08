@@ -19,19 +19,25 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bash curl sudo xz-utils unzip
+          sudo apt-get install -y build-essential fakeroot rsync curl perl zip git xz-utils unzip libtinfo6 libxml2-dev
 
-      - name: Install Theos
-        env:
-          SHELL: /bin/bash
+      - name: Set up Theos
         run: |
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          export THEOS="$HOME/theos"
+          echo "THEOS=$THEOS" >> "$GITHUB_ENV"
+          echo "$THEOS/bin" >> "$GITHUB_PATH"
+          git clone --depth=1 https://github.com/theos/theos.git "$THEOS"
+          mkdir -p "$THEOS/toolchain" "$THEOS/sdks"
+          curl -fsSL --retry 5 --retry-delay 5 -o /tmp/toolchain.tar.xz \
+            https://github.com/L1ghtmann/llvm-project/releases/latest/download/iOSToolchain-x86_64.tar.xz
+          tar -xJf /tmp/toolchain.tar.xz -C "$THEOS/toolchain"
+          curl -fsSL --retry 5 --retry-delay 5 -o /tmp/sdk.tar.xz \
+            https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS16.5.sdk.tar.xz
+          tar -xJf /tmp/sdk.tar.xz -C "$THEOS/sdks"
+          ls "$THEOS/toolchain/linux/iphone/bin/ldid" "$THEOS/sdks/iPhoneOS16.5.sdk/SDKSettings.plist"
 
       - name: Build package
-        env:
-          THEOS: /home/runner/theos
         run: |
-          export PATH="$THEOS/bin:$PATH"
           make clean || true
           make -j"$(nproc)" package FINALPACKAGE=1
 
