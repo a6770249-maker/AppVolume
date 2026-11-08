@@ -1,0 +1,9 @@
+Package: com.mayday.appvolume
+Name: AppVolume
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: 为每个 App 单独设置音量（0–100%），配置在设置中按 App 调整并即时生效。
+Maintainer: mayday
+Author: mayday
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000), preferenceloader, firmware (>= 15.0)
