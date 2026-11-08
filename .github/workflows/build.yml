@@ -28,7 +28,7 @@ jobs:
           echo "$THEOS/bin" >> "$GITHUB_PATH"
           echo "$THEOS/toolchain/linux/iphone/bin" >> "$GITHUB_PATH"
 
-          git clone --depth=1 https://github.com/theos/theos.git "$THEOS"
+          git clone --depth=1 --recursive https://github.com/theos/theos.git "$THEOS"
 
           mkdir -p "$THEOS/sdks"
           git clone --depth=1 --filter=blob:none --sparse https://github.com/theos/sdks.git /tmp/sdks
