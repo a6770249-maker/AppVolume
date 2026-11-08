@@ -1,6 +1,7 @@
 #import "AVRootListController.h"
 #import "../AppVolumeManager.h"
 #import <Preferences/PSSpecifier.h>
+#import <objc/message.h>
 #import <objc/runtime.h>
 
 @interface LSApplicationProxy : NSObject
@@ -12,8 +13,7 @@
 - (NSString *)applicationType;
 @end
 
-@interface LSApplicationWorkspace : NSObject
-+ (instancetype)defaultWorkspace;
+@protocol LSApplicationWorkspaceProtocol <NSObject>
 - (NSArray *)allApplications;
 @end
 
@@ -134,11 +134,13 @@
 - (NSArray<NSDictionary *> *)loadInstalledApplications {
     NSMutableArray<NSDictionary *> *applications = [NSMutableArray array];
 
-    if (!objc_getClass("LSApplicationWorkspace")) {
+    Class workspaceClass = objc_getClass("LSApplicationWorkspace");
+    if (!workspaceClass) {
         return applications;
     }
 
-    LSApplicationWorkspace *workspace = [LSApplicationWorkspace defaultWorkspace];
+    id<LSApplicationWorkspaceProtocol> workspace =
+        ((id (*)(id, SEL))objc_msgSend)((id)workspaceClass, @selector(defaultWorkspace));
 
     for (id object in [workspace allApplications]) {
         LSApplicationProxy *proxy = (LSApplicationProxy *)object;
