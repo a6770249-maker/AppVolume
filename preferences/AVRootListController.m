@@ -1,6 +1,21 @@
 #import "AVRootListController.h"
 #import "../AppVolumeManager.h"
 #import <Preferences/PSSpecifier.h>
+#import <objc/runtime.h>
+
+@interface LSApplicationProxy : NSObject
+- (NSString *)bundleIdentifier;
+- (NSString *)localizedName;
+- (BOOL)isPlaceholder;
+- (BOOL)isHidden;
+- (BOOL)isRestricted;
+- (NSString *)applicationType;
+@end
+
+@interface LSApplicationWorkspace : NSObject
++ (instancetype)defaultWorkspace;
+- (NSArray *)allApplications;
+@end
 
 @implementation AVRootListController {
     NSArray<NSDictionary *> *_installedApplications;
@@ -119,48 +134,30 @@
 - (NSArray<NSDictionary *> *)loadInstalledApplications {
     NSMutableArray<NSDictionary *> *applications = [NSMutableArray array];
 
-    Class workspaceClass = objc_getClass("LSApplicationWorkspace");
-    if (!workspaceClass) {
+    if (!objc_getClass("LSApplicationWorkspace")) {
         return applications;
     }
 
-    id workspace = [workspaceClass performSelector:@selector(defaultWorkspace)];
-    if (![workspace respondsToSelector:@selector(allApplications)]) {
-        return applications;
-    }
+    LSApplicationWorkspace *workspace = [LSApplicationWorkspace defaultWorkspace];
 
-    for (id proxy in [workspace allApplications]) {
-        if (![proxy respondsToSelector:@selector(bundleIdentifier)]) {
-            continue;
-        }
-
+    for (id object in [workspace allApplications]) {
+        LSApplicationProxy *proxy = (LSApplicationProxy *)object;
         NSString *bundleIdentifier = [proxy bundleIdentifier];
         if (bundleIdentifier.length == 0) {
             continue;
         }
 
-        if ([proxy respondsToSelector:@selector(isPlaceholder)] && [proxy isPlaceholder]) {
-            continue;
-        }
-        if ([proxy respondsToSelector:@selector(isHidden)] && [proxy isHidden]) {
-            continue;
-        }
-        if ([proxy respondsToSelector:@selector(isRestricted)] && [proxy isRestricted]) {
+        if ([proxy isPlaceholder] || [proxy isHidden] || [proxy isRestricted]) {
             continue;
         }
 
         // 只保留用户安装的 App 和系统可见 App，过滤掉内部组件。
-        if ([proxy respondsToSelector:@selector(applicationType)]) {
-            NSString *type = [proxy applicationType];
-            if (![type isEqualToString:@"User"] && ![type isEqualToString:@"System"]) {
-                continue;
-            }
+        NSString *type = [proxy applicationType];
+        if (type.length > 0 && ![type isEqualToString:@"User"] && ![type isEqualToString:@"System"]) {
+            continue;
         }
 
-        NSString *name = nil;
-        if ([proxy respondsToSelector:@selector(localizedName)]) {
-            name = [proxy localizedName];
-        }
+        NSString *name = [proxy localizedName];
         if (name.length == 0) {
             name = bundleIdentifier;
         }
